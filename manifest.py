@@ -35,7 +35,7 @@ from base64 import b64encode
 from collections import OrderedDict
 from io import StringIO
 
-from os.path import isdir, join, sep, split, walk
+from os.path import isdir, join, sep, split
 from zipfile import ZipFile
 
 from change import GenericChange, SuperChange
@@ -376,7 +376,7 @@ class Manifest(ManifestSection):
         linesep = linesep or self.linesep or os.linesep
 
         ManifestSection.store(self, stream, linesep)
-        for sect in sorted(self.sub_sections.values()):
+        for sect in self.sub_sections.values():
             sect.store(stream, linesep)
 
 
@@ -514,8 +514,8 @@ class SignatureManifest(Manifest):
         # be re-using this digest to also calculate the total
         # checksum.
         h_all = digest()
-        h_all.update(manifest.get_main_section())
-        self[main_key] = b64encode(h_all.digest())
+        h_all.update(manifest.get_main_section().encode('utf-8'))
+        self[main_key] = b64encode(h_all.digest()).decode("utf-8")
 
         for sub_section in list(manifest.sub_sections.values()):
             sub_data = sub_section.get_data(linesep)
@@ -523,16 +523,16 @@ class SignatureManifest(Manifest):
             # create the checksum of the section body and store it as a
             # sub-section of our own
             h_section = digest()
-            h_section.update(sub_data)
+            h_section.update(sub_data.encode('utf-8'))
             sf_sect = self.create_section(sub_section.primary())
-            sf_sect[sect_key] = b64encode(h_section.digest())
+            sf_sect[sect_key] = b64encode(h_section.digest()).decode("utf-8")
 
             # push this data into this total as well.
-            h_all.update(sub_data)
+            h_all.update(sub_data.encode('utf-8'))
 
         # after traversing all the sub sections, we now have the
         # digest of the whole manifest.
-        self[all_key] = b64encode(h_all.digest())
+        self[all_key] = b64encode(h_all.digest()).decode("utf-8")
 
 
     def verify_manifest_main_checksum(self, manifest):
@@ -667,7 +667,7 @@ class SignatureBlockFileChange(GenericChange):
 def b64_encoded_digest(data, algorithm):
     h = algorithm()
     h.update(data)
-    return b64encode(h.digest())
+    return b64encode(h.digest()).decode("utf-8")
 
 
 def detect_linesep(data):
@@ -824,25 +824,6 @@ def zipentry_chunk(zipfile, name, size=_BUFFERING):
                 yield buf
                 buf = fd.read(size)
     return chunks
-
-
-def directory_generator(dirname, trim=0):
-    """
-    yields a tuple of (relative filename, chunking function). The
-    chunking function can be called to open and iterate over the
-    contents of the filename.
-    """
-
-    def gather(collect, dirname, fnames):
-        for fname in fnames:
-            df = join(dirname, fname)
-            if not isdir(df):
-                collect.append(df)
-
-    collect = list()
-    walk(dirname, gather, collect)
-    for fname in collect:
-        yield fname[trim:], file_chunk(fname)
 
 
 def multi_path_generator(pathnames):

@@ -103,7 +103,7 @@ def create_signature_block(openssl_digest, certificate, private_key,
             stack.push(X509.load_cert(cert))
         smime.set_x509_stack(stack)
 
-    pkcs7 = smime.sign(BIO.MemoryBuffer(data),
+    pkcs7 = smime.sign(BIO.MemoryBuffer(data.encode()),
                        flags=(SMIME.PKCS7_BINARY |
                               SMIME.PKCS7_DETACHED |
                               SMIME.PKCS7_NOATTR))
