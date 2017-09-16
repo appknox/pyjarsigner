@@ -63,7 +63,7 @@ class MissingManifestError(Exception):
     pass
 
 
-def verify(certificate, jar_file, sf_name = None):
+def verify(certificate, jar_file, sf_name=None):
     """
     Verifies signature of a JAR file.
 
@@ -87,14 +87,16 @@ def verify(certificate, jar_file, sf_name = None):
         raise JarSignatureMissingError("No .SF file in %s" % jar_file)
     elif len(sf_files) > 1:
         if sf_name is None:
-            msg = "Multiple .SF files in %s, but SF_NAME.SF not specified" \
-                    % jar_file
+            msg = (
+                "Multiple .SF files in %s, but SF_NAME.SF not specified"
+                % jar_file)
             raise VerificationError(msg)
         elif ('META-INF/' + sf_name) in sf_files:
             sf_filename = 'META-INF/' + sf_name
         else:
-            msg = "No .SF file in %s named META-INF/%s (found %d .SF files)" \
-                    % (jar_file, sf_name, len(sf_files))
+            msg = (
+                "No .SF file in %s named META-INF/%s (found %d .SF files)"
+                % (jar_file, sf_name, len(sf_files)))
             raise VerificationError(msg)
     elif len(sf_files) == 1:
         if sf_name is None:
@@ -232,125 +234,3 @@ def create_jar(jar_file, entries):
                 for root, dirs, files in os.walk(entry):
                     for filename in dirs + files:
                         jar.write(os.path.join(root, filename))
-
-
-def cli_create_jar(argument_list):
-    """
-    A subset of "jar" command. Creating new JARs only.
-    """
-
-    usage_message = "usage: jarutil c [OPTIONS] file.jar files..."
-    parser = argparse.ArgumentParser(usage=usage_message)
-
-    parser.add_argument("jar_file", type=str,
-                        help="The file to create")
-    parser.add_argument("-m", "--main-class", type=str,
-                        help="Specify application entry point")
-
-    args, entries = parser.parse_known_args(argument_list)
-    create_jar(args.jar_file, entries)
-    return 0
-
-
-def cli_sign_jar(argument_list=None):
-    """
-    Command-line wrapper around sign()
-    """
-
-    usage_message = "jarutil s [OPTIONS] jar_file cert_file " \
-                    "key_file key_alias"
-
-    parser = argparse.ArgumentParser(usage=usage_message)
-
-    parser.add_argument("jar_file", type=str,
-                        help="JAR file to sign")
-    parser.add_argument("cert_file", type=str,
-                        help="Certificate file (PEM format)")
-    parser.add_argument("key_file", type=str,
-                        help="Private key file (PEM format)")
-    parser.add_argument("key_alias", type=str,
-                        help="JAR \"key alias\" to use")
-
-    parser.add_argument("-d", "--digest", action="store", default="SHA-256",  # TODO: factor to a constant
-                        help="Digest algorithm used for signing")
-
-    parser.add_argument("-c", "--chain", action="append",
-                        dest="extra_certs", default=[],
-                        help="Additional certificates to embed into the"
-                        " signature (PEM format). More than one \"-c\" option"
-                        " can be provided.")
-
-    parser.add_argument("-o", "--output", action="store", default=None,
-                        help="Filename to put signed jar. If not provided, the"
-                        " signature is added to the original jar file.")
-
-    args = parser.parse_args(argument_list)
-
-    try:
-        sign(args.jar_file, args.cert_file, args.key_file, args.key_alias,
-             args.extra_certs, args.digest, args.output)
-
-    except CannotFindKeyTypeError:
-        print("Cannot determine private key type in %s" % args.key_file)
-        return 1
-
-    except MissingManifestError:
-        print("Manifest missing in jar file %s" % args.jar_file)
-        return 2
-
-    return 0
-
-
-def cli_verify_jar_signature(argument_list):
-    """
-    Command-line wrapper around verify()
-    TODO: use trusted keystore;
-    """
-
-    usage_message = "jarutil v file.jar trusted_certificate.pem [SF_NAME.SF]"
-    if len(argument_list) < 2 or len(argument_list) > 3:
-        print(usage_message)
-        return 1
-
-    jar_file, certificate, sf_name = (argument_list + [None])[:3]
-    try:
-        verify(certificate, jar_file, sf_name)
-    except VerificationError as error_message:
-        print(error_message)
-        return 1
-    else:
-        print("Jar verified.")
-        return 0
-
-
-def usage():
-    print("Usage: jarutil [csv] [options] [argument]...")
-    print("   c: create JAR from paths")
-    print("   s: sign JAR")
-    print("   v: verify JAR signature")
-    print("Give option \"-h\" for help on particular commands.")
-    return 1
-
-
-def main(args=sys.argv):
-    if len(args) < 2:
-        return usage()
-
-    command = args[1]
-    rest = args[2:]
-
-    if "create".startswith(command):
-        return cli_create_jar(rest)
-    elif "sign".startswith(command):
-        return cli_sign_jar(rest)
-    elif "view".startswith(command):
-        return cli_verify_jar_signature(rest)
-    else:
-        return usage()
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
-
-#
-# The end.
