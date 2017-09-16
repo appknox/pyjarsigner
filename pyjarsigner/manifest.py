@@ -38,9 +38,9 @@ from io import StringIO
 from os.path import isdir, join, sep, split
 from zipfile import ZipFile
 
-from change import GenericChange, SuperChange
-from change import Addition, Removal
-from dirutils import fnmatches, makedirsp
+from .change import GenericChange, SuperChange
+from .change import Addition, Removal
+from .dirutils import fnmatches, makedirsp
 
 
 _BUFFERING = 2 ** 14
@@ -595,7 +595,7 @@ class SignatureManifest(Manifest):
     def get_signature(self, certificate, private_key, extra_certs,
                       digest_algorithm="SHA-256"):
 
-        from crypto import create_signature_block
+        from .crypto import create_signature_block
 
         try:
             openssl_digest = JAVA_TO_OPENSSL_DIGESTS[digest_algorithm]

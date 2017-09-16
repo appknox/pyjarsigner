@@ -29,14 +29,9 @@ from shutil import copyfile
 from tempfile import NamedTemporaryFile
 from zipfile import ZipFile, ZIP_DEFLATED
 
-from manifest import file_matches_sigfile, Manifest, SignatureManifest
-from crypto import private_key_type, CannotFindKeyTypeError
-from crypto import verify_signature_block, SignatureBlockVerificationError
-
-
-__all__ = (
-    "cli_create_jar", "cli_sign_jar",
-    "cli_verify_jar_signature", "main", )
+from .manifest import file_matches_sigfile, Manifest, SignatureManifest
+from .crypto import private_key_type, CannotFindKeyTypeError
+from .crypto import verify_signature_block, SignatureBlockVerificationError
 
 
 class VerificationError(Exception):
@@ -165,7 +160,7 @@ def verify(certificate, jar_file, sf_name=None):
     return None
 
 
-def sign(jar_file, cert_file, key_file, key_alias,
+def sign(jar_file, cert_file, key_file,
          extra_certs=None, digest="SHA-256", output=None):
     """
     Signs the jar (almost) identically to jarsigner.
@@ -197,21 +192,22 @@ def sign(jar_file, cert_file, key_file, key_alias,
 
     # We might just add new entries to the original JAR, but jarsigner puts
     # all META-INF/ to the beginning of the archive. Let's do the same.
-    print(mf.get_data())
+
     with NamedTemporaryFile() as new_jar_file:
         new_jar = ZipFile(new_jar_file, "w", ZIP_DEFLATED)
         new_jar.writestr("META-INF/MANIFEST.MF", mf.get_data())
-        new_jar.writestr("META-INF/%s.SF" % key_alias, sf.get_data())
-        new_jar.writestr("META-INF/%s.%s" % (key_alias, sig_block_extension),
-                         sigdata)
-        f = ['META-INF/MANIFEST.MF', 'META-INF/CERT.RSA', 'META-INF/CERT.SF']
+        new_jar.writestr("META-INF/CERT.SF", sf.get_data())
+        new_jar.writestr("META-INF/CERT.%s" % sig_block_extension, sigdata)
         for entry in jar.namelist():
-            if entry.upper() not in f:
+            if not entry.upper().startswith('META-INF/'):
                 new_jar.writestr(entry, jar.read(entry))
 
         new_jar.close()
         new_jar_file.flush()
-        copyfile(new_jar_file.name, jar_file if output is None else output)
+        if output:
+            return copyfile(new_jar_file.name, output)
+        new_jar_file.seek(0)
+        return new_jar_file.read()
 
 
 def create_jar(jar_file, entries):
