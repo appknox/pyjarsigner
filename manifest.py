@@ -43,16 +43,6 @@ from change import Addition, Removal
 from dirutils import fnmatches, makedirsp
 
 
-__all__ = (
-    "ManifestChange", "ManifestSectionChange",
-    "ManifestSectionAdded", "ManifestSectionRemoved",
-    "Manifest", "ManifestSection",
-    "SignatureManifest",
-    "ManifestKeyException", "MalformedManifest",
-    "main", "cli",
-    "cli_create", "cli_query", "cli_verify", )
-
-
 _BUFFERING = 2 ** 14
 
 
@@ -126,7 +116,6 @@ _add_digest("SHA-512", "sha512")
 class ManifestSectionChange(GenericChange):
     label = "Manifest Subsection"
 
-
     def get_description(self):
         m = self.ldata or self.rdata
         entry = m.primary()
@@ -134,7 +123,6 @@ class ManifestSectionChange(GenericChange):
             return "%s Changed: %s" % (self.label, entry)
         else:
             return "%s Unchanged: %s" % (self.label, entry)
-
 
     def is_ignored(self, options):
         if getattr(options, "ignore_manifest_subsections", False):
@@ -158,7 +146,6 @@ class ManifestSectionAdded(ManifestSectionChange, Addition):
     def get_description(self):
         return "%s: %s" % (self.label, self.rdata.primary())
 
-
     def is_ignored(self, options):
         return getattr(options, "ignore_manifest_subsections", False)
 
@@ -170,7 +157,6 @@ class ManifestSectionRemoved(ManifestSectionChange, Removal):
     def get_description(self):
         return "%s: %s" % (self.label, self.ldata.primary())
 
-
     def is_ignored(self, options):
         return getattr(options, "ignore_manifest_subsections", False)
 
@@ -179,13 +165,11 @@ class ManifestMainChange(GenericChange):
 
     label = "Manifest Main Section"
 
-
     def get_description(self):
         if self.is_change():
             return "%s has changed" % self.label
         else:
             return "%s is unchanged" % self.label
-
 
     def is_ignored(self, options):
         ikeys = set(getattr(options, "ignore_manifest_key", set()))
@@ -203,7 +187,6 @@ class ManifestChange(SuperChange):
 
     label = "Manifest"
 
-
     def collect_impl(self):
         lm, rm = self.ldata, self.rdata
         yield ManifestMainChange(lm, rm)
@@ -220,7 +203,6 @@ class ManifestChange(SuperChange):
         for s in r_sections.difference(l_sections):
             yield ManifestSectionAdded(None, rm.sub_sections[s])
 
-
     def is_ignored(self, options):
         return getattr(options, "ignore_manifest", False) or \
             SuperChange.is_ignored(self, options)
@@ -230,11 +212,9 @@ class ManifestSection(OrderedDict):
 
     primary_key = "Name"
 
-
     def __init__(self, name=None):
         OrderedDict.__init__(self)
         self[self.primary_key] = name
-
 
     def __setitem__(self, k, v):
         # pylint: disable=W0221
@@ -250,14 +230,12 @@ class ManifestSection(OrderedDict):
         else:
             OrderedDict.__setitem__(self, k, str(v))
 
-
     def primary(self):
         """
         The primary value for this section
         """
 
         return self.get(self.primary_key)
-
 
     def load(self, items):
         """
@@ -266,7 +244,6 @@ class ManifestSection(OrderedDict):
 
         for k, vals in items:
             self[k] = "".join(vals)
-
 
     def store(self, stream, linesep=os.linesep):
         """
@@ -278,7 +255,6 @@ class ManifestSection(OrderedDict):
 
         stream.write(linesep)
 
-
     def get_data(self, linesep=os.linesep):
         """
         Serialize the section and return it as a string
@@ -288,12 +264,13 @@ class ManifestSection(OrderedDict):
         self.store(stream, linesep)
         return stream.getvalue()
 
-
     def keys_with_suffix(self, suffix):
         """
         :return: list of keys ending with given :suffix:.
         """
-        return [k.rstrip(suffix) for k in list(self.keys()) if k.endswith(suffix)]
+        return [
+            k.rstrip(suffix) for k in list(self.keys()) if k.endswith(suffix)
+        ]
 
 
 class Manifest(ManifestSection):
@@ -308,13 +285,11 @@ class Manifest(ManifestSection):
 
     primary_key = "Manifest-Version"
 
-
     def __init__(self, version="1.0", linesep=None):
         # can't use super, because we're a child of a non-object
         ManifestSection.__init__(self, version)
         self.sub_sections = OrderedDict([])
         self.linesep = linesep
-
 
     def create_section(self, name, overwrite=True):
         """
@@ -336,7 +311,6 @@ class Manifest(ManifestSection):
 
         return sect
 
-
     def parse_file(self, filename):
         """
         Parse the given file, and attempt to detect the line separator.
@@ -344,7 +318,6 @@ class Manifest(ManifestSection):
 
         with open(filename, "r", _BUFFERING) as stream:
             self.parse(stream)
-
 
     def parse(self, data):
         """
@@ -365,7 +338,6 @@ class Manifest(ManifestSection):
             next_section.load(section)
             self.sub_sections[next_section.primary()] = next_section
 
-
     def store(self, stream, linesep=None):
         """
         Serialize the Manifest to a stream
@@ -379,7 +351,6 @@ class Manifest(ManifestSection):
         for sect in self.sub_sections.values():
             sect.store(stream, linesep)
 
-
     def get_main_section(self, linesep=None):
         """
         Serialize just the main section of the manifest and return it as a
@@ -392,7 +363,6 @@ class Manifest(ManifestSection):
         ManifestSection.store(self, stream, linesep)
         return stream.getvalue()
 
-
     def get_data(self, linesep=None):
         """
         Serialize the entire manifest and return it as a string
@@ -403,7 +373,6 @@ class Manifest(ManifestSection):
         stream = StringIO()
         self.store(stream, linesep)
         return stream.getvalue()
-
 
     def verify_jar_checksums(self, jar_file, strict=True):
         """
@@ -441,7 +410,6 @@ class Manifest(ManifestSection):
 
         return verify_failures
 
-
     def add_jar_entries(self, jar_file, digest_name="SHA-256"):
         """
         Add manifest sections for all but signature-related entries
@@ -462,7 +430,6 @@ class Manifest(ManifestSection):
                 section[key_digest] = b64_encoded_digest(jar.read(entry),
                                                          digest)
 
-
     def clear(self):
         """
         removes all items from this manifest, and clears and removes all
@@ -474,7 +441,6 @@ class Manifest(ManifestSection):
         self.sub_sections.clear()
 
         ManifestSection.clear(self)
-
 
     def __del__(self):
         self.clear()
@@ -488,7 +454,6 @@ class SignatureManifest(Manifest):
     """
 
     primary_key = "Signature-Version"
-
 
     def digest_manifest(self, manifest, java_algorithm="SHA-256"):
         """
@@ -534,7 +499,6 @@ class SignatureManifest(Manifest):
         # digest of the whole manifest.
         self[all_key] = b64encode(h_all.digest()).decode("utf-8")
 
-
     def verify_manifest_main_checksum(self, manifest):
         """
         Verify the checksum over the manifest main section.
@@ -558,7 +522,6 @@ class SignatureManifest(Manifest):
 
         return False
 
-
     def verify_manifest_main_attributes_checksum(self, manifest):
         # JAR spec allows for the checksum of the whole manifest to mismatch.
         # There is a second chance for the verification to succeed:
@@ -576,7 +539,6 @@ class SignatureManifest(Manifest):
                 return True
         else:
             return False
-
 
     def verify_manifest_entry_checksums(self, manifest, strict=True):
         """
@@ -619,7 +581,6 @@ class SignatureManifest(Manifest):
 
         return failures
 
-
     def verify_manifest(self, manifest):
         if self.verify_manifest_main_checksum(manifest):
             return []
@@ -630,7 +591,6 @@ class SignatureManifest(Manifest):
             return ["META-INF/MANIFEST.MF"]
 
         return self.verify_manifest_entry_checksums(manifest)
-
 
     def get_signature(self, certificate, private_key, extra_certs,
                       digest_algorithm="SHA-256"):
@@ -738,7 +698,6 @@ def parse_sections(data):
                     "Invalid manifest line: %i; line contents: %s"
                     % (lineno, cleanline))
 
-
     # yield and leftovers
     if curr:
         yield curr
@@ -826,23 +785,6 @@ def zipentry_chunk(zipfile, name, size=_BUFFERING):
     return chunks
 
 
-def multi_path_generator(pathnames):
-    """
-    yields (name,chunkgen) for all of the files found under the list
-    of pathnames given. This is recursive, so directories will have
-    their contents emitted. chunkgen is a function that can called and
-    iterated over to obtain the contents of the file in multiple
-    reads.
-    """
-
-    for pathname in pathnames:
-        if isdir(pathname):
-            for entry in directory_generator(pathname):
-                yield entry
-        else:
-            yield pathname, file_chunk(pathname)
-
-
 def _in_sig_related_dir(filename):
     path_components = filename.split("/")
     return len(path_components) == 2 and path_components[0] == "META-INF"
@@ -868,97 +810,6 @@ def file_skips_verification(filename):
         or file_matches_sigfile(filename)
 
 
-def single_path_generator(pathname):
-    """
-    emits name,chunkgen pairs for the given file at pathname. If
-    pathname is a directory, will act recursively and will emit for
-    each file in the directory tree chunkgen is a generator that can
-    be iterated over to obtain the contents of the file in multiple
-    parts
-    """
-
-    if isdir(pathname):
-        trim = len(pathname)
-        if pathname[-1] != sep:
-            trim += 1
-        for entry in directory_generator(pathname, trim):
-            yield entry
-
-    else:
-        zf = ZipFile(pathname)
-        for f in zf.namelist():
-            if f[-1] != '/':
-                yield f, zipentry_chunk(zf, f)
-        zf.close()
-
-
-def cli_create(digesta, contenta, manifesta):
-    """
-    command-line call to create a manifest from a JAR file or a
-    directory
-    """
-
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("content", help="file or directory")
-    # # TODO: shouldn't we always process directories recursively?
-    # parser.add_argument("-r", "--recursive",
-    #                     help="process directories recursively")
-    # parser.add_argument("-i", "--ignore", nargs="+", action="append",
-    #                     help="patterns to ignore "
-    #                          "(can be given more than once)")
-    # parser.add_argument("-m", "--manifest", default=None,
-    #                     help="output file (default is stdout)")
-    # parser.add_argument("-d", "--digest",
-    #                     help="digest(s) to use, comma-separated")
-    #
-    # args = parser.parse_args(argument_list)
-
-    # TODO: remove digest from here, they are created when signing!
-    if digesta is None:
-        digesta = "MD5,SHA1"
-    requested_digests = digesta.split(",")
-    try:
-        use_digests = [_get_digest(digest) for digest in requested_digests]
-    except UnsupportedDigest:
-        print("Unknown digest algorithm %r" % digest)
-        print("Supported algorithms:", ",".join(sorted(NAMED_DIGESTS.keys())))
-        return 1
-
-    # if args.recursive:
-    #     entries = multi_path_generator(args.content)
-    # else:
-    entries = single_path_generator(contenta)
-
-    mf = Manifest()
-
-    # ignores = ["META-INF/*"]
-    # if args.ignore:
-    #     ignores.extend(*args.ignore)
-
-    for name, chunks in entries:
-        # skip the stuff that we were told to ignore
-        # if ignores and fnmatches(name, *ignores):
-        #     continue
-
-        sec = mf.create_section(name)
-
-        digests = zip(requested_digests, digest_chunks(chunks(), use_digests))
-        for digest_name, digest_value in digests:
-            sec[digest_name + "-Digest"] = digest_value
-
-    # output = outputa
-    # if args.manifest:
-    #     # we'll output to the manifest file if specified, and we'll
-    #     # even create parent directories for it, if necessary
-    #     makedirsp(split(args.manifest)[0])
-    output = open(manifesta, "w")
-
-    mf.store(output)
-
-    # if args.manifest:
-    output.close()
-
-
 def cli_verify(args):
     if len(args) != 1 or "-h" in args:
         print("Usage: manifest v [--ignore=PATH] JAR_FILE")
@@ -972,69 +823,9 @@ def cli_verify(args):
 
     errors = mf.verify_jar_checksums(jarfn)
     if len(errors) > 0:
-        print("Verify failed, no matching checksums for files: %s" \
+        print("Verify failed, no matching checksums for files: %s"
               % ", ".join(errors))
         return 1
 
     else:
         return 0
-
-
-def cli_query(args):
-    if len(args) < 2 or "-h" in args:
-        print("Usage: manifest file.jar key_to_query...")
-        return 1
-
-    zf = ZipFile(args[0])
-    mf = Manifest()
-    mf.parse(zf.read("META-INF/MANIFEST.MF"))
-
-    for q in args[1:]:
-        s = q.split(':', 1)
-        if len(s) > 1:
-            mfs = mf.sub_sections.get(s[0])
-            if mfs:
-                print(q, "=", mfs.get(s[1]))
-            else:
-                print(q, ": No such section")
-
-        else:
-            print(q, "=", mf.get(s[0]))
-
-
-def usage(error_msg=None):
-    if error_msg is not None:
-        print(error_msg)
-    print("Usage: manifest [cqv] [options]...")
-    print("    c: create a manifest")
-    print("    q: query manifest for values")
-    print("    v: verify manifest checksums")
-    print("Give option \"-h\" for help on particular commands.")
-    return 1
-
-
-def main(args):
-    """
-    main entry point for the manifest CLI
-    """
-
-    if len(args) < 2:
-        return usage("Command expected")
-
-    command = args[1]
-    rest = args[2:]
-
-    if "create".startswith(command):
-        return cli_create(rest)
-    elif "query".startswith(command):
-        return cli_query(rest)
-    elif "verify".startswith(command):
-        return cli_verify(rest)
-    else:
-        return usage("Unknown command: %s" % command)
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
-#
-# The end.
