@@ -92,7 +92,7 @@ def iterate_by_type(objs, typelist):
         for val in cache.pop(t, tuple()):
             yield val
 
-    for tl in cache.values():
+    for tl in list(cache.values()):
         for val in tl:
             yield val
 

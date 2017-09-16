@@ -33,8 +33,8 @@ import sys
 
 from base64 import b64encode
 from collections import OrderedDict
-from cStringIO import StringIO
-from itertools import izip
+from io import StringIO
+
 from os.path import isdir, join, sep, split, walk
 from zipfile import ZipFile
 
@@ -273,7 +273,7 @@ class ManifestSection(OrderedDict):
         Serialize this section and write it to a stream
         """
 
-        for k, v in self.items():
+        for k, v in list(self.items()):
             write_key_val(stream, k, v, linesep)
 
         stream.write(linesep)
@@ -293,7 +293,7 @@ class ManifestSection(OrderedDict):
         """
         :return: list of keys ending with given :suffix:.
         """
-        return [k.rstrip(suffix) for k in self.keys() if k.endswith(suffix)]
+        return [k.rstrip(suffix) for k in list(self.keys()) if k.endswith(suffix)]
 
 
 class Manifest(ManifestSection):
@@ -357,7 +357,7 @@ class Manifest(ManifestSection):
         # the first section is the main one for the manifest. It's
         # also where we will check for our newline separator
         sections = parse_sections(data)
-        self.load(sections.next())
+        self.load(next(sections))
 
         # and all following sections are considered sub-sections
         for section in sections:
@@ -469,7 +469,7 @@ class Manifest(ManifestSection):
         sub-sections
         """
 
-        for sub in self.sub_sections.values():
+        for sub in list(self.sub_sections.values()):
             sub.clear()
         self.sub_sections.clear()
 
@@ -517,7 +517,7 @@ class SignatureManifest(Manifest):
         h_all.update(manifest.get_main_section())
         self[main_key] = b64encode(h_all.digest())
 
-        for sub_section in manifest.sub_sections.values():
+        for sub_section in list(manifest.sub_sections.values()):
             sub_data = sub_section.get_data(linesep)
 
             # create the checksum of the section body and store it as a
@@ -597,7 +597,7 @@ class SignatureManifest(Manifest):
 
         failures = []
 
-        for s in manifest.sub_sections.values():
+        for s in list(manifest.sub_sections.values()):
             sf_section = self.create_section(s.primary(), overwrite=False)
 
             digests = s.keys_with_suffix("-Digest")
@@ -939,8 +939,8 @@ def cli_create(digesta, contenta, manifesta):
     try:
         use_digests = [_get_digest(digest) for digest in requested_digests]
     except UnsupportedDigest:
-        print "Unknown digest algorithm %r" % digest
-        print "Supported algorithms:", ",".join(sorted(NAMED_DIGESTS.keys()))
+        print("Unknown digest algorithm %r" % digest)
+        print("Supported algorithms:", ",".join(sorted(NAMED_DIGESTS.keys())))
         return 1
 
     # if args.recursive:
@@ -961,7 +961,7 @@ def cli_create(digesta, contenta, manifesta):
 
         sec = mf.create_section(name)
 
-        digests = izip(requested_digests, digest_chunks(chunks(), use_digests))
+        digests = zip(requested_digests, digest_chunks(chunks(), use_digests))
         for digest_name, digest_value in digests:
             sec[digest_name + "-Digest"] = digest_value
 
@@ -980,7 +980,7 @@ def cli_create(digesta, contenta, manifesta):
 
 def cli_verify(args):
     if len(args) != 1 or "-h" in args:
-        print "Usage: manifest v [--ignore=PATH] JAR_FILE"
+        print("Usage: manifest v [--ignore=PATH] JAR_FILE")
         return 2
 
     jarfn = args[0]
@@ -991,8 +991,8 @@ def cli_verify(args):
 
     errors = mf.verify_jar_checksums(jarfn)
     if len(errors) > 0:
-        print "Verify failed, no matching checksums for files: %s" \
-              % ", ".join(errors)
+        print("Verify failed, no matching checksums for files: %s" \
+              % ", ".join(errors))
         return 1
 
     else:
@@ -1001,7 +1001,7 @@ def cli_verify(args):
 
 def cli_query(args):
     if len(args) < 2 or "-h" in args:
-        print "Usage: manifest file.jar key_to_query..."
+        print("Usage: manifest file.jar key_to_query...")
         return 1
 
     zf = ZipFile(args[0])
@@ -1013,17 +1013,17 @@ def cli_query(args):
         if len(s) > 1:
             mfs = mf.sub_sections.get(s[0])
             if mfs:
-                print q, "=", mfs.get(s[1])
+                print(q, "=", mfs.get(s[1]))
             else:
-                print q, ": No such section"
+                print(q, ": No such section")
 
         else:
-            print q, "=", mf.get(s[0])
+            print(q, "=", mf.get(s[0]))
 
 
 def usage(error_msg=None):
     if error_msg is not None:
-        print error_msg
+        print(error_msg)
     print("Usage: manifest [cqv] [options]...")
     print("    c: create a manifest")
     print("    q: query manifest for values")

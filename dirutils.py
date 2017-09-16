@@ -136,7 +136,7 @@ def _gen_from_dircmp(dc, lpath, rpath):
     for f in same_files:
         yield (BOTH, join(relpath(dc.left, lpath), f))
 
-    subdirs = dc.subdirs.values()
+    subdirs = list(dc.subdirs.values())
     subdirs.sort()
     for sub in subdirs:
         for event in _gen_from_dircmp(sub, lpath, rpath):
