@@ -21,16 +21,14 @@ Java archives
 :license: LGPL
 """
 
-import argparse
 import os
-import sys
 
 from shutil import copyfile
 from tempfile import NamedTemporaryFile
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZipFile, ZIP_STORED
 
 from .manifest import file_matches_sigfile, Manifest, SignatureManifest
-from .crypto import private_key_type, CannotFindKeyTypeError
+from .crypto import private_key_type
 from .crypto import verify_signature_block, SignatureBlockVerificationError
 
 
@@ -194,12 +192,18 @@ def sign(jar_file, cert_file, key_file,
     # all META-INF/ to the beginning of the archive. Let's do the same.
 
     with NamedTemporaryFile() as new_jar_file:
-        new_jar = ZipFile(new_jar_file, "w", ZIP_DEFLATED)
+        new_jar = ZipFile(new_jar_file, "w", ZIP_STORED)
+        cert_ext = "META-INF/CERT.%s" % sig_block_extension
         new_jar.writestr("META-INF/MANIFEST.MF", mf.get_data())
         new_jar.writestr("META-INF/CERT.SF", sf.get_data())
-        new_jar.writestr("META-INF/CERT.%s" % sig_block_extension, sigdata)
+        new_jar.writestr(cert_ext, sigdata)
+        exclude_files = [
+            "META-INF/MANIFEST.MF",
+            "META-INF/CERT.SF",
+            cert_ext
+        ]
         for entry in jar.namelist():
-            if not entry.upper().startswith('META-INF/'):
+            if entry.upper() not in exclude_files:
                 new_jar.writestr(entry, jar.read(entry))
 
         new_jar.close()
