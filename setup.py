@@ -13,7 +13,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     platforms='any',
-    install_requires=['M2Crypto==0.30.1'],
+    install_requires=['M2Crypto==0.35.2'],
     description="Pure Python3 implementation to sign JAR and APK files",
     long_description="pure Python3 implementation to sign JAR and APK files "
         "which was inspired and borrowed from python-javatools",
