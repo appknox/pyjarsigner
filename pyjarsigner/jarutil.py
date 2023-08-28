@@ -200,6 +200,8 @@ def sign(jar_file, cert_file, key_file,
         exclude_files = [
             "META-INF/MANIFEST.MF",
             "META-INF/CERT.SF",
+            "META-INF/BNDLTOOL.SF",
+            "META-INF/BNDLTOOL.RSA",
             cert_ext
         ]
         for entry in jar.namelist():
