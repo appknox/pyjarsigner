@@ -17,7 +17,6 @@ classifiers = [
 python = "^3.8"
 M2Crypto = "0.38.0"
 
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
