@@ -2,15 +2,15 @@
 
 [[package]]
 name = "m2crypto"
-version = "0.38.0"
-description = "M2Crypto: A Python crypto and SSL toolkit"
+version = "0.41.0"
+description = "A Python crypto and SSL toolkit"
 optional = false
 python-versions = "*"
 files = [
-    {file = "M2Crypto-0.38.0.tar.gz", hash = "sha256:99f2260a30901c949a8dc6d5f82cd5312ffb8abc92e76633baf231bbbcb2decb"},
+    {file = "M2Crypto-0.41.0.tar.gz", hash = "sha256:3a1358c7ee849046d91782a777f1786bf027a1c1d51b5faf8f19435bfc3f1495"},
 ]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "92b9cb75967591353654f1be5061d7951da91bdf2e2a888c9382f963bde6d939"
+content-hash = "51f42452031a23e1db900cb37a2f3ced1b22c75ce6f89b8aa6a1b8965d9d6033"

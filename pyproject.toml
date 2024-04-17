@@ -15,7 +15,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
-M2Crypto = "0.38.0"
+M2Crypto = "0.41.0"
 
 [build-system]
 requires = ["poetry-core"]
