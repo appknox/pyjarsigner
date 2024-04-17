@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyjarsigner"
-version = "0.2.5"
+version = "0.2.6"
 description = "Pure Python3 implementation to sign JAR and APK files"
 authors = ["Subho Halder <sunny@appknox.com>"]
 license = "LGPL-3.0-only"
