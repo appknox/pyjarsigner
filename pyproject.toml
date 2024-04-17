@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "pyjarsigner"
+version = "0.2.4"
+description = "Pure Python3 implementation to sign JAR and APK files"
+authors = ["Subho Halder <sunny@appknox.com>"]
+license = "LGPL-3.0-only"
+readme = "README.md"
+keywords = ["appknox", "pyjarsigner", "jarsigner", "android", "apksigner"]
+classifiers = [
+    "Intended Audience :: Developers",
+
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+M2Crypto = "0.38.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
