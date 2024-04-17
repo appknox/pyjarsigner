@@ -27,11 +27,12 @@ fi
 
 echo "Creating release"
 rm -rf dist/
+CURRENT_VERSION=$(poetry version -s)
 poetry version "$1"
 poetry update
 export CURRENT_BRANCH
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-VERSION=$(poetry version -s)
-git commit -am "Version bump $VERSION"
+NEW_VERSION=$(poetry version -s)
+git commit -am "Bump version: $CURRENT_VERSION → $NEW_VERSION"
 git push origin "$CURRENT_BRANCH:$CURRENT_BRANCH"
 poetry publish --build
